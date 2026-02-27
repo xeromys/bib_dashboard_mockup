@@ -3,33 +3,63 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Map Dashboard</title>
+    <title>Bats in Backyards Dashboard</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet/dist/leaflet.css"/>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css"/>
     <style>
-        /* Existing styles */
-        #obs-map {
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f5f5f5;
+            color: #333;
+        }
+        #map {
+            height: 400px;
             flex-shrink: 0;
         }
-        /* Other styles... */
-    </style>
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet/dist/leaflet.css" />
-    <script src="https://cdn.jsdelivr.net/npm/leaflet/dist/leaflet.js"></script>
-    <script>
-        // Map initialization and handling
-        var mapTimeouts = { timeout1: 300, timeout2: 800, timeout3: 1500 };
-        function initMap() {
-            try {
-                var map = L.map('obs-map').setView([51.505, -0.09], 13);
-                // ... additional map setup
-            } catch (error) {
-                console.error('Error loading Leaflet:', error);
-                alert('Failed to load the map. Please try again later.');
+        .container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px;
+        }
+        @media (max-width: 768px) {
+            #map {
+                height: 300px;
             }
         }
-        window.onload = initMap;
-    </script>
+        /* Australian flora color palette */
+        .header {
+            background-color: #a8d1b2; /* example color */
+            padding: 10px;
+            width: 100%;
+            text-align: center;
+            color: #fff;
+        }
+    </style>
 </head>
 <body>
-    <div id="obs-map" style="height: 600px;"></div>
-    <!-- Other body content... -->
+    <div class="container">
+        <div class="header">
+            <h1>Bats in Backyards Dashboard</h1>
+        </div>
+        <div id="map"></div>
+        <script src="https://cdn.jsdelivr.net/npm/leaflet/dist/leaflet.js"></script>
+        <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+        <script>
+            var map = L.map('map').setView([-27.0, 133.0], 4);
+
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                maxZoom: 19,
+                attribution: '© OpenStreetMap contributors'
+            }).addTo(map);
+
+            // Function for updating species data rendering, survey events and other components.
+            function updateDashboard() {
+                // Your JavaScript code to handle species data rendering.
+            }
+
+            updateDashboard();
+        </script>
+    </div>
 </body>
 </html>
