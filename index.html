@@ -1,0 +1,1975 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Bats in Backyards — Dashboard</title>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,400;0,9..144,500;1,9..144,300;1,9..144,400&family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@300;400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<style>
+
+/*
+  ════════════════════════════════════════════════════
+  BATS IN BACKYARDS — CRM DASHBOARD
+  
+  PALETTE — Australian Flora:
+    Wattle gold      #C8920A  (Acacia)
+    Wattle light     #F2C94C  (Acacia pycnantha)
+    Grevillea        #C45C2E  (Grevillea robusta)
+    Banksia          #D4722A  (Banksia serrata)
+    Eucalyptus       #5A7A5C  (E. viminalis bark)
+    Sage             #8FAF7E  (Eucalyptus leaf underside)
+    Lemon myrtle     #E8EDD6  (Backhousia citriodora)
+    Bush cream       #F7F3EB  (Paperbark white)
+    Ironbark         #2C3A2E  (Eucalyptus sideroxylon)
+    Sandy loam       #B8A882  (Dry sclerophyll soil)
+    Lichen grey      #9AA89A  (Rock lichen)
+  ════════════════════════════════════════════════════
+*/
+
+:root {
+  --wattle:      #C8920A;
+  --wattle-lt:   #F2C94C;
+  --wattle-pale: #FDF6E3;
+  --grevillea:   #C45C2E;
+  --banksia:     #D4722A;
+  --euc:         #5A7A5C;
+  --euc-lt:      #7A9E7D;
+  --sage:        #8FAF7E;
+  --sage-lt:     #C5D9BA;
+  --sage-pale:   #EFF5EB;
+  --cream:       #F7F3EB;
+  --parchment:   #EDE8DC;
+  --ironbark:    #2C3A2E;
+  --loam:        #B8A882;
+  --loam-lt:     #E0D8C8;
+  --lichen:      #9AA89A;
+  --white:       #FFFFFF;
+
+  --text-primary:   #1E2B20;
+  --text-secondary: #4A5E4C;
+  --text-muted:     #7A9080;
+  --text-light:     #A8B8A8;
+
+  --border:       #D8D0C0;
+  --border-lt:    #EAE5DA;
+
+  --shadow-sm:  0 1px 3px rgba(44,58,46,0.07);
+  --shadow-md:  0 4px 12px rgba(44,58,46,0.10);
+  --shadow-lg:  0 8px 24px rgba(44,58,46,0.12);
+
+  --radius:   6px;
+  --radius-lg: 10px;
+
+  --sidebar-w: 224px;
+  --topbar-h:  58px;
+}
+
+*, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
+
+html { font-size: 14px; }
+
+body {
+  font-family: 'DM Sans', sans-serif;
+  background: var(--cream);
+  color: var(--text-primary);
+  line-height: 1.5;
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+/* ─── LAYOUT ────────────────────────────────── */
+.concept-banner {
+  position: top;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 28px;
+  line-height: 28px;
+  text-align: center;
+  background: #2C3A2E;
+  color: #F2C94C;
+  font-size: 11px;
+  letter-spacing: 0.5px;
+  text-align: center;
+  z-index: 9999;
+}
+
+body {
+  margin: 0;
+  padding-top: 28px;
+}
+.app-shell {
+  margin-top: 29px;
+}
+
+/* ─── LAYOUT ────────────────────────────────── */
+.layout {
+  display: flex;
+  min-height: 100vh;
+  margin-top: 28px;
+}
+
+/* ─── SIDEBAR ───────────────────────────────── */
+.sidebar {
+  width: var(--sidebar-w);
+  background: var(--ironbark);
+  position: fixed;
+  top: 29px; left: 0; bottom: 0;
+  display: flex;
+  flex-direction: column;
+  z-index: 200;
+  overflow-y: auto;
+}
+
+/* Subtle bark texture */
+.sidebar::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-image: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.02'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+  pointer-events: none;
+}
+
+.brand {
+  padding: 20px 18px 16px;
+  border-bottom: 1px solid rgba(255,255,255,0.07);
+  position: relative;
+}
+
+.brand-logo {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  margin-bottom: 4px;
+}
+
+.brand-bat {
+  font-size: 22px;
+  line-height: 1;
+}
+
+.brand-name {
+  font-family: 'Fraunces', serif;
+  font-size: 16px;
+  font-weight: 500;
+  color: #fff;
+  letter-spacing: -0.3px;
+  line-height: 1.2;
+}
+
+.brand-sub {
+  font-size: 10px;
+  color: var(--sage);
+  letter-spacing: 0.5px;
+  margin-top: 1px;
+}
+
+.brand-project {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 10px;
+  background: rgba(255,255,255,0.06);
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 4px;
+  padding: 5px 9px;
+}
+
+.brand-project-dot {
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  background: var(--wattle-lt);
+  box-shadow: 0 0 6px rgba(242,201,76,0.6);
+  flex-shrink: 0;
+}
+
+.brand-project-name {
+  font-size: 10px;
+  color: rgba(255,255,255,0.7);
+  letter-spacing: 0.3px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* NAV */
+.nav {
+  padding: 10px 0 8px;
+  flex: 1;
+}
+
+.nav-section {
+  padding: 14px 18px 5px;
+  font-size: 9px;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: rgba(255,255,255,0.25);
+  font-weight: 500;
+}
+
+.nav-item {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 8px 18px;
+  font-size: 13px;
+  color: rgba(255,255,255,0.55);
+  cursor: pointer;
+  border-left: 2px solid transparent;
+  transition: all 0.15s ease;
+  position: relative;
+}
+
+.nav-item:hover {
+  color: rgba(255,255,255,0.85);
+  background: rgba(255,255,255,0.04);
+}
+
+.nav-item.active {
+  color: var(--wattle-lt);
+  background: rgba(242,201,76,0.08);
+  border-left-color: var(--wattle-lt);
+}
+
+.nav-icon {
+  font-size: 15px;
+  width: 20px;
+  text-align: center;
+  flex-shrink: 0;
+}
+
+.nav-label { flex: 1; }
+
+.nav-count {
+  font-size: 10px;
+  background: rgba(255,255,255,0.1);
+  color: rgba(255,255,255,0.5);
+  padding: 1px 6px;
+  border-radius: 8px;
+  font-family: 'DM Mono', monospace;
+}
+
+.nav-item.active .nav-count {
+  background: rgba(242,201,76,0.15);
+  color: var(--wattle-lt);
+}
+
+/* SIDEBAR FOOTER */
+.sidebar-foot {
+  padding: 12px 16px;
+  border-top: 1px solid rgba(255,255,255,0.07);
+}
+
+.user-card {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+}
+
+.user-avatar {
+  width: 32px; height: 32px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--euc), var(--sage));
+  display: flex; align-items: center; justify-content: center;
+  font-size: 11px;
+  font-weight: 600;
+  color: white;
+  flex-shrink: 0;
+}
+
+.user-name {
+  font-size: 12px;
+  font-weight: 500;
+  color: rgba(255,255,255,0.8);
+  line-height: 1.3;
+}
+
+.user-role {
+  font-size: 10px;
+  color: var(--sage);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.user-link {
+  margin-left: auto;
+  font-size: 11px;
+  color: var(--sage);
+  cursor: pointer;
+  opacity: 0.7;
+  transition: opacity 0.15s;
+}
+.user-link:hover { opacity: 1; }
+
+/* ─── MAIN ──────────────────────────────────── */
+.main {
+  margin-left: var(--sidebar-w);
+  flex: 1;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ─── TOPBAR ────────────────────────────────── */
+.topbar {
+  height: var(--topbar-h);
+  background: var(--white);
+  border-bottom: 1px solid var(--border-lt);
+  display: flex;
+  align-items: center;
+  padding: 0 24px;
+  gap: 14px;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  box-shadow: var(--shadow-sm);
+  justify-content: space-between;
+}
+
+.topbar-controls {
+  display: flex;
+  gap: 10px;
+}
+
+.topbar-controls select {
+  background: #2C3A2E;
+  color: #F2C94C;
+  border: 1px solid #F2C94C;
+  padding: 4px 8px;
+  font-size: 12px;
+}
+
+.topbar-breadcrumb {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.topbar-breadcrumb .crumb-active {
+  color: var(--text-primary);
+  font-weight: 500;
+}
+
+.topbar-sep { color: var(--border); }
+
+.topbar-right {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.topbar-period {
+  display: flex;
+  align-items: center;
+  gap: 0;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+}
+
+.period-opt {
+  padding: 5px 12px;
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--text-muted);
+  cursor: pointer;
+  background: var(--white);
+  border-right: 1px solid var(--border);
+  transition: all 0.15s;
+}
+.period-opt:last-child { border-right: none; }
+.period-opt:hover { background: var(--cream); }
+.period-opt.active {
+  background: var(--ironbark);
+  color: white;
+}
+
+.topbar-btn {
+  width: 34px; height: 34px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--white);
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer;
+  font-size: 15px;
+  color: var(--text-secondary);
+  transition: all 0.15s;
+  position: relative;
+}
+.topbar-btn:hover { border-color: var(--euc); color: var(--euc); background: var(--sage-pale); }
+
+.notif-pip {
+  position: absolute; top: -3px; right: -3px;
+  width: 14px; height: 14px;
+  border-radius: 50%;
+  background: var(--grevillea);
+  border: 2px solid var(--white);
+  font-size: 7px;
+  display: flex; align-items: center; justify-content: center;
+  color: white;
+  font-family: 'DM Mono', monospace;
+  font-weight: 700;
+}
+
+/* ─── CONTENT ───────────────────────────────── */
+.content {
+  padding: 22px 24px;
+  flex: 1;
+}
+
+/* ─── PAGE HEADER ───────────────────────────── */
+.page-hd {
+  margin-bottom: 20px;
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+}
+
+.page-title {
+  font-family: 'Fraunces', serif;
+  font-size: 24px;
+  font-weight: 400;
+  color: var(--ironbark);
+  letter-spacing: -0.5px;
+  line-height: 1.2;
+}
+
+.page-subtitle {
+  font-size: 12px;
+  color: var(--text-muted);
+  margin-top: 3px;
+}
+
+.page-hd-actions {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+/* ─── BUTTONS ───────────────────────────────── */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 14px;
+  border-radius: var(--radius);
+  font-family: 'DM Sans', sans-serif;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  border: 1px solid transparent;
+  transition: all 0.15s;
+  white-space: nowrap;
+}
+
+.btn-primary {
+  background: var(--euc);
+  color: white;
+  border-color: var(--euc);
+}
+.btn-primary:hover { background: var(--ironbark); border-color: var(--ironbark); }
+
+.btn-secondary {
+  background: var(--white);
+  color: var(--text-secondary);
+  border-color: var(--border);
+}
+.btn-secondary:hover { border-color: var(--euc); color: var(--euc); background: var(--sage-pale); }
+
+.btn-wattle {
+  background: var(--wattle);
+  color: white;
+  border-color: var(--wattle);
+}
+.btn-wattle:hover { background: #A37508; border-color: #A37508; }
+
+/* ─── STAT CARDS ────────────────────────────── */
+.stat-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 14px;
+  margin-bottom: 20px;
+}
+
+.stat-card {
+  background: var(--white);
+  border: 1px solid var(--border-lt);
+  border-radius: var(--radius-lg);
+  padding: 16px 18px;
+  position: relative;
+  overflow: hidden;
+  box-shadow: var(--shadow-sm);
+  animation: fadeUp 0.4s ease both;
+}
+
+.stat-card::after {
+  content: '';
+  position: absolute;
+  bottom: 0; left: 0; right: 0;
+  height: 3px;
+  border-radius: 0 0 var(--radius-lg) var(--radius-lg);
+}
+
+.stat-card.wattle::after   { background: var(--wattle); }
+.stat-card.euc::after      { background: var(--euc); }
+.stat-card.banksia::after  { background: var(--banksia); }
+.stat-card.grevillea::after{ background: var(--grevillea); }
+
+.stat-card:nth-child(2) { animation-delay: .06s; }
+.stat-card:nth-child(3) { animation-delay: .12s; }
+.stat-card:nth-child(4) { animation-delay: .18s; }
+
+@keyframes fadeUp {
+  from { opacity:0; transform:translateY(10px); }
+  to   { opacity:1; transform:translateY(0); }
+}
+
+.stat-icon {
+  font-size: 22px;
+  margin-bottom: 10px;
+  display: block;
+  line-height: 1;
+}
+
+.stat-value {
+  font-family: 'Fraunces', serif;
+  font-size: 30px;
+  font-weight: 400;
+  color: var(--ironbark);
+  line-height: 1;
+  margin-bottom: 4px;
+  letter-spacing: -1px;
+}
+
+.stat-label {
+  font-size: 12px;
+  color: var(--text-muted);
+  font-weight: 400;
+}
+
+.stat-delta {
+  position: absolute;
+  top: 16px; right: 16px;
+  font-size: 11px;
+  font-weight: 500;
+  padding: 2px 7px;
+  border-radius: 10px;
+}
+
+.delta-up {
+  background: var(--sage-pale);
+  color: var(--euc);
+}
+
+.delta-warn {
+  background: var(--wattle-pale);
+  color: var(--wattle);
+}
+
+/* ─── MAIN GRID ─────────────────────────────── */
+.main-grid {
+  display: grid;
+  grid-template-columns: 1fr 340px;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+.bottom-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 16px;
+}
+
+/* ─── PANEL ─────────────────────────────────── */
+.panel {
+  background: var(--white);
+  border: 1px solid var(--border-lt);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+  animation: fadeUp 0.4s ease both;
+  overflow: hidden;
+}
+
+.panel.delay-1 { animation-delay: .1s; }
+.panel.delay-2 { animation-delay: .16s; }
+.panel.delay-3 { animation-delay: .22s; }
+.panel.delay-4 { animation-delay: .28s; }
+
+.panel-hd {
+  padding: 14px 18px 12px;
+  border-bottom: 1px solid var(--border-lt);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.panel-hd-accent {
+  width: 3px; height: 16px;
+  border-radius: 2px;
+  flex-shrink: 0;
+}
+
+.panel-title {
+  font-family: 'Fraunces', serif;
+  font-size: 14px;
+  font-weight: 400;
+  color: var(--ironbark);
+  letter-spacing: -0.2px;
+}
+
+.panel-sub {
+  font-size: 11px;
+  color: var(--text-muted);
+  margin-top: 1px;
+}
+
+.panel-action {
+  margin-left: auto;
+  font-size: 11px;
+  color: var(--euc);
+  font-weight: 500;
+  cursor: pointer;
+  padding: 3px 8px;
+  border-radius: 4px;
+  border: 1px solid rgba(90,122,92,0.2);
+  transition: all 0.15s;
+  white-space: nowrap;
+}
+.panel-action:hover { background: var(--sage-pale); border-color: var(--euc); }
+
+.panel-body { padding: 16px 18px; }
+
+/* ─── MAP ───────────────────────────────────── */
+#obs-map {
+  width: 100%;
+  height: 360px;
+  background: #EFF5EB;
+  border-radius: 0 0 var(--radius-lg) var(--radius-lg);
+}
+
+.map-filter-bar {
+  padding: 10px 14px;
+  background: var(--cream);
+  border-bottom: 1px solid var(--border-lt);
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.filter-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 10px;
+  border-radius: 14px;
+  font-size: 11px;
+  font-weight: 500;
+  cursor: pointer;
+  border: 1px solid var(--border);
+  color: var(--text-secondary);
+  background: var(--white);
+  transition: all 0.15s;
+  white-space: nowrap;
+}
+
+.filter-chip:hover { border-color: var(--euc); color: var(--euc); }
+
+.filter-chip.on { border-color: transparent; color: white; }
+.filter-chip.on.wattle   { background: var(--wattle);   }
+.filter-chip.on.euc      { background: var(--euc);      }
+.filter-chip.on.banksia  { background: var(--banksia);  }
+.filter-chip.on.grevillea{ background: var(--grevillea);}
+
+.filter-dot { width: 6px; height: 6px; border-radius: 50%; background: currentColor; flex-shrink:0; }
+
+/* ─── SPECIES BAR CHART ─────────────────────── */
+.species-list { }
+
+.species-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 0;
+  border-bottom: 1px solid var(--border-lt);
+}
+
+.species-row:last-child { border-bottom: none; }
+
+.species-name-col { width: 160px; flex-shrink: 0; }
+
+.species-sci {
+  font-family: 'Fraunces', serif;
+  font-style: italic;
+  font-size: 12px;
+  color: var(--ironbark);
+  line-height: 1.3;
+}
+
+.species-common {
+  font-size: 10px;
+  color: var(--text-muted);
+  margin-top: 1px;
+}
+
+.species-bar-wrap {
+  flex: 1;
+  height: 7px;
+  background: var(--parchment);
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.species-bar {
+  height: 100%;
+  border-radius: 4px;
+  transition: width 1s ease;
+}
+
+.species-count {
+  font-family: 'DM Mono', monospace;
+  font-size: 12px;
+  color: var(--text-secondary);
+  min-width: 30px;
+  text-align: right;
+  flex-shrink: 0;
+}
+
+.species-badge {
+  flex-shrink: 0;
+  font-size: 9px;
+  padding: 2px 6px;
+  border-radius: 3px;
+  font-weight: 600;
+  letter-spacing: 0.3px;
+  text-transform: uppercase;
+}
+
+.badge-threatened {
+  background: rgba(196,92,46,0.1);
+  color: var(--grevillea);
+  border: 1px solid rgba(196,92,46,0.2);
+}
+
+.badge-vulnerable {
+  background: rgba(200,146,10,0.1);
+  color: var(--wattle);
+  border: 1px solid rgba(200,146,10,0.2);
+}
+
+.badge-lc {
+  background: rgba(90,122,92,0.1);
+  color: var(--euc);
+  border: 1px solid rgba(90,122,92,0.2);
+}
+
+/* ─── RECENT ACTIVITY ───────────────────────── */
+.activity-item {
+  display: flex;
+  gap: 11px;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--border-lt);
+}
+
+.activity-item:last-child { border-bottom: none; }
+
+.act-icon {
+  width: 32px; height: 32px;
+  border-radius: 8px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 14px;
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+
+.act-body { flex: 1; min-width: 0; }
+
+.act-title {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text-primary);
+  line-height: 1.4;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.act-meta {
+  font-size: 11px;
+  color: var(--text-muted);
+  margin-top: 2px;
+}
+
+.act-time {
+  font-size: 10px;
+  color: var(--text-light);
+  flex-shrink: 0;
+  margin-top: 2px;
+  font-family: 'DM Mono', monospace;
+}
+
+/* ─── SURVEY EVENTS TABLE ───────────────────── */
+.table-wrap { overflow-x: auto; }
+
+.data-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+}
+
+.data-table th {
+  text-align: left;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--border-lt);
+  background: var(--cream);
+  white-space: nowrap;
+}
+
+.data-table td {
+  padding: 9px 12px;
+  border-bottom: 1px solid var(--border-lt);
+  color: var(--text-primary);
+  vertical-align: middle;
+}
+
+.data-table tr:last-child td { border-bottom: none; }
+
+.data-table tr:hover td { background: var(--sage-pale); }
+
+.td-mono {
+  font-family: 'DM Mono', monospace;
+  font-size: 11px;
+  color: var(--text-secondary);
+}
+
+.td-species {
+  font-family: 'Fraunces', serif;
+  font-style: italic;
+  font-size: 12px;
+}
+
+/* status pills */
+.status-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 8px;
+  border-radius: 10px;
+  font-size: 10px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.pill-dot { width: 5px; height: 5px; border-radius: 50%; }
+
+.status-active    { background: var(--sage-pale); color: var(--euc); }
+.status-active    .pill-dot { background: var(--euc); box-shadow: 0 0 4px var(--euc); }
+
+.status-complete  { background: var(--parchment); color: var(--loam); }
+.status-complete  .pill-dot { background: var(--loam); }
+
+.status-pending   { background: var(--wattle-pale); color: var(--wattle); }
+.status-pending   .pill-dot { background: var(--wattle); }
+
+.status-review    { background: rgba(196,92,46,0.08); color: var(--grevillea); }
+.status-review    .pill-dot { background: var(--grevillea); }
+
+/* ─── SENSOR PIPELINE ───────────────────────── */
+.pipeline {
+  display: flex;
+  gap: 0;
+  padding: 12px 0 4px;
+}
+
+.pipe-step {
+  flex: 1;
+  text-align: center;
+  position: relative;
+  padding-bottom: 8px;
+}
+
+.pipe-step::after {
+  content: '';
+  position: absolute;
+  top: 15px; left: 55%; right: -5%;
+  height: 1px;
+  background: var(--border-lt);
+}
+
+.pipe-step:last-child::after { display: none; }
+
+.pipe-circle {
+  width: 30px; height: 30px;
+  border-radius: 50%;
+  border: 2px solid var(--border);
+  background: var(--white);
+  display: flex; align-items: center; justify-content: center;
+  margin: 0 auto 6px;
+  font-size: 11px;
+  position: relative;
+  z-index: 1;
+  transition: all 0.2s;
+}
+
+.pipe-step.done .pipe-circle {
+  border-color: var(--euc);
+  background: var(--sage-pale);
+  color: var(--euc);
+}
+
+.pipe-step.active .pipe-circle {
+  border-color: var(--wattle);
+  background: var(--wattle-pale);
+  color: var(--wattle);
+  box-shadow: 0 0 0 3px rgba(200,146,10,0.15);
+}
+
+.pipe-num {
+  font-family: 'Fraunces', serif;
+  font-size: 17px;
+  font-weight: 400;
+  color: var(--ironbark);
+  line-height: 1;
+  margin-bottom: 2px;
+}
+
+.pipe-lbl {
+  font-size: 9px;
+  color: var(--text-muted);
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+}
+
+.pipe-step.done .pipe-lbl  { color: var(--euc); }
+.pipe-step.active .pipe-lbl{ color: var(--wattle); }
+
+/* ─── HABITAT MINI CHART ────────────────────── */
+.habitat-bars { margin-top: 4px; }
+
+.hab-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 9px;
+}
+
+.hab-label {
+  font-size: 11px;
+  color: var(--text-secondary);
+  width: 130px;
+  flex-shrink: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.hab-track {
+  flex: 1;
+  height: 8px;
+  background: var(--parchment);
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.hab-fill {
+  height: 100%;
+  border-radius: 4px;
+  transition: width 1s ease;
+}
+
+.hab-pct {
+  font-family: 'DM Mono', monospace;
+  font-size: 10px;
+  color: var(--text-muted);
+  min-width: 28px;
+  text-align: right;
+}
+
+/* ─── LANDHOLDER CARDS ──────────────────────── */
+.lh-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 0;
+  border-bottom: 1px solid var(--border-lt);
+  cursor: pointer;
+  transition: background 0.1s;
+}
+.lh-row:last-child { border-bottom: none; }
+
+.lh-avatar {
+  width: 34px; height: 34px;
+  border-radius: 8px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 12px;
+  font-weight: 700;
+  flex-shrink: 0;
+  font-family: 'DM Mono', monospace;
+}
+
+.lh-name {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text-primary);
+  margin-bottom: 2px;
+}
+
+.lh-meta {
+  font-size: 10px;
+  color: var(--text-muted);
+}
+
+.lh-status {
+  margin-left: auto;
+  flex-shrink: 0;
+}
+
+/* ─── DARWIN CORE INDICATOR ─────────────────── */
+.dwc-banner {
+  background: linear-gradient(135deg, var(--sage-pale), var(--wattle-pale));
+  border: 1px solid var(--sage-lt);
+  border-radius: var(--radius);
+  padding: 10px 14px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 16px;
+  animation: fadeUp 0.4s ease both;
+}
+
+.dwc-icon { font-size: 18px; flex-shrink: 0; }
+
+.dwc-text { flex: 1; }
+.dwc-title { font-size: 12px; font-weight: 600; color: var(--ironbark); }
+.dwc-sub   { font-size: 11px; color: var(--text-muted); margin-top: 1px; }
+
+.dwc-actions { display: flex; gap: 6px; }
+
+/* ─── SCROLL ────────────────────────────────── */
+* { scrollbar-width: thin; scrollbar-color: var(--border) transparent; }
+
+/* ─── LEAFLET OVERRIDES ─────────────────────── */
+.leaflet-tile { filter: saturate(0.7) brightness(1.05); }
+
+.leaflet-popup-content-wrapper {
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-md);
+  border: 1px solid var(--border-lt);
+  font-family: 'DM Sans', sans-serif;
+}
+
+.leaflet-popup-content {
+  font-size: 12px;
+  color: var(--text-primary);
+  margin: 10px 14px;
+}
+
+.popup-species {
+  font-family: 'Fraunces', serif;
+  font-style: italic;
+  font-size: 14px;
+  color: var(--ironbark);
+  margin-bottom: 4px;
+}
+
+.popup-meta { font-size: 11px; color: var(--text-muted); }
+.popup-meta span { color: var(--euc); font-weight: 500; }
+
+/* ─── PROGRESS BARS ─────────────────────────── */
+.prog-bar-wrap { width: 100%; }
+
+/* ─── EMPTY / MISC ──────────────────────────── */
+.col { display: flex; flex-direction: column; gap: 16px; }
+
+.divider { border: none; border-top: 1px solid var(--border-lt); margin: 12px 0; }
+
+/* responsive pulse for active sensor */
+@keyframes activePulse {
+  0%,100% { opacity: 1; }
+  50%      { opacity: 0.4; }
+}
+.pulse { animation: activePulse 2s ease-in-out infinite; }
+
+/* map attribution tweak */
+.leaflet-control-attribution {
+  font-size: 9px !important;
+  background: rgba(247,243,235,0.85) !important;
+}
+
+</style>
+</head>
+<body>
+<div class="concept-banner">
+  Conceptual Interface Mockup — For discussion only. Data and functionality are illustrative.
+</div>
+
+<!-- ═══ SIDEBAR ══════════════════════════════════ -->
+<aside class="sidebar">
+  <div class="brand">
+    <div class="brand-logo">
+      <span class="brand-bat">🦇</span>
+      <div>
+        <div class="brand-name">Bats in Backyards</div>
+      </div>
+    </div>
+    <div class="brand-sub">Ecological CRM · NSW DCCEEW</div>
+    <div class="brand-project">
+      <div class="brand-project-dot"></div>
+      <span class="brand-project-name">Microbat Diversity Survey — Mid-North Coast & New England</span>
+    </div>
+  </div>
+
+  <nav class="nav">
+    <div class="nav-section">Overview</div>
+    <div class="nav-item active" onclick="setPage(this,'dashboard')">
+      <span class="nav-icon">⬡</span>
+      <span class="nav-label">Dashboard</span>
+    </div>
+
+    <div class="nav-section">Observations</div>
+    <div class="nav-item" onclick="setPage(this,'observations')">
+      <span class="nav-icon">📍</span>
+      <span class="nav-label">Observations</span>
+      <span class="nav-count">1,204</span>
+    </div>
+    <div class="nav-item" onclick="setPage(this,'surveys')">
+      <span class="nav-icon">🗒</span>
+      <span class="nav-label">Survey Events</span>
+      <span class="nav-count">89</span>
+    </div>
+    <div class="nav-item" onclick="setPage(this,'sites')">
+      <span class="nav-icon">🗺</span>
+      <span class="nav-label">Sites</span>
+    </div>
+    <div class="nav-item" onclick="setPage(this,'species')">
+      <span class="nav-icon">🦇</span>
+      <span class="nav-label">Species Register</span>
+    </div>
+
+    <div class="nav-section">Field Network</div>
+    <div class="nav-item" onclick="setPage(this,'contributors')">
+      <span class="nav-icon">👥</span>
+      <span class="nav-label">Contributors</span>
+      <span class="nav-count">142</span>
+    </div>
+    <div class="nav-item" onclick="setPage(this,'sensors')">
+      <span class="nav-icon">📡</span>
+      <span class="nav-label">Sensors</span>
+    </div>
+    <div class="nav-item" onclick="setPage(this,'dispatch')">
+      <span class="nav-icon">📦</span>
+      <span class="nav-label">Dispatch</span>
+      <span class="nav-count" style="background:rgba(200,146,10,0.2);color:var(--wattle-lt)">7</span>
+    </div>
+
+    <div class="nav-section">Conservation</div>
+    <div class="nav-item" onclick="setPage(this,'landholders')">
+      <span class="nav-icon">🏡</span>
+      <span class="nav-label">Landholders</span>
+    </div>
+    <div class="nav-item" onclick="setPage(this,'habitat')">
+      <span class="nav-icon">🌿</span>
+      <span class="nav-label">Habitat Assessments</span>
+    </div>
+    <div class="nav-item" onclick="setPage(this,'analysis')">
+      <span class="nav-icon">🔬</span>
+      <span class="nav-label">Analysis Queue</span>
+      <span class="nav-count" style="background:rgba(196,92,46,0.2);color:#E8895A">23</span>
+    </div>
+
+    <div class="nav-section">Exports</div>
+    <div class="nav-item" onclick="setPage(this,'exports')">
+      <span class="nav-icon">⬇</span>
+      <span class="nav-label">Darwin Core / GBIF</span>
+    </div>
+    <div class="nav-item" onclick="setPage(this,'reports')">
+      <span class="nav-icon">📄</span>
+      <span class="nav-label">Reports</span>
+    </div>
+  </nav>
+
+  <div class="sidebar-foot">
+    <div class="user-card">
+      <div class="user-avatar">EM</div>
+      <div>
+        <div class="user-name">Emily Morgan</div>
+        <div class="user-role">Project Admin</div>
+      </div>
+      <div class="user-link" title="Settings">⚙</div>
+    </div>
+  </div>
+</aside>
+
+<!-- ═══ MAIN ══════════════════════════════════════ -->
+<main class="main">
+
+  <!-- TOPBAR -->
+  <header class="topbar">
+    <div class="topbar-breadcrumb">
+      <span>BiB CRM</span>
+      <span class="topbar-sep">›</span>
+      <span class="crumb-active" id="breadcrumb">Dashboard</span>
+    </div>
+    <div class="topbar-right">
+      <div class="topbar-period">
+        <div class="period-opt" onclick="setPeriod(this,'7d')">7d</div>
+        <div class="period-opt" onclick="setPeriod(this,'30d')">30d</div>
+        <div class="period-opt active" onclick="setPeriod(this,'season')">Season</div>
+        <div class="period-opt" onclick="setPeriod(this,'all')">All</div>
+      </div>
+      <div class="topbar-btn" title="Search">🔍</div>
+      <div class="topbar-btn" title="Notifications">
+        🔔
+        <div class="notif-pip">3</div>
+      </div>
+      <div class="topbar-btn" title="Help">?</div>
+      <a href="https://www.environment.nsw.gov.au/research-and-publications/your-research/citizen-science/get-involved/bats-in-backyards" 
+         target="_blank" 
+         style="text-decoration:none">
+        <div class="btn btn-secondary" style="font-size:11px">← BiB Website</div>
+      </a>
+    </div>
+    <div class="topbar-controls">
+      <select id="projectSwitch">
+        <option>Microbat Survey</option>
+        <option>Koala Habitat Monitoring</option>
+        <option>River Acoustic Baseline</option>
+      </select>
+
+      <select id="roleSwitch">
+        <option value="admin">Admin</option>
+        <option value="scientist">Scientist</option>
+        <option value="contributor">Contributor</option>
+      </select>
+    </div>
+  </header>
+
+  <!-- ─── DASHBOARD PAGE ──────────────────────── -->
+  <div class="content" id="page-dashboard">
+
+    <!-- Darwin Core export notice -->
+    <div class="dwc-banner">
+      <span class="dwc-icon">🌐</span>
+      <div class="dwc-text">
+        <div class="dwc-title">312 new occurrences ready to export</div>
+        <div class="dwc-sub">Darwin Core Archive · Humboldt Extension · GBIF-aligned — last export 14 Mar 2025</div>
+      </div>
+      <div class="dwc-actions">
+        <div class="btn btn-secondary" style="font-size:11px">Preview</div>
+        <div class="btn btn-primary" style="font-size:11px">Export DwC-A</div>
+      </div>
+    </div>
+
+    <!-- Page header -->
+    <div class="page-hd">
+      <div>
+        <div class="page-title">Season Overview</div>
+        <div class="page-subtitle">Autumn survey period · March – May 2025 · Mid-North Coast NSW</div>
+      </div>
+      <div class="page-hd-actions">
+        <div class="btn btn-secondary">⬇ Export CSV</div>
+        <div class="btn btn-wattle">+ New Survey Event</div>
+      </div>
+    </div>
+
+    <!-- Stat cards -->
+    <div class="stat-grid">
+      <div class="stat-card wattle">
+        <span class="stat-icon">🦇</span>
+        <div class="stat-value">1,204</div>
+        <div class="stat-label">Bat detections</div>
+        <div class="stat-delta delta-up">↑ 18%</div>
+      </div>
+      <div class="stat-card euc">
+        <span class="stat-icon">📡</span>
+        <div class="stat-value">89</div>
+        <div class="stat-label">Active sensors</div>
+        <div class="stat-delta delta-up">8 recording</div>
+      </div>
+      <div class="stat-card banksia">
+        <span class="stat-icon">👥</span>
+        <div class="stat-value">142</div>
+        <div class="stat-label">Contributors</div>
+        <div class="stat-delta delta-up">↑ 8 this month</div>
+      </div>
+      <div class="stat-card grevillea">
+        <span class="stat-icon">🌿</span>
+        <div class="stat-value">12</div>
+        <div class="stat-label">Species confirmed</div>
+        <div class="stat-delta delta-warn">3 threatened</div>
+      </div>
+    </div>
+
+    <!-- Map + Activity -->
+    <div class="main-grid">
+
+      <!-- MAP PANEL -->
+      <div class="panel delay-1">
+        <div class="panel-hd">
+          <div class="panel-hd-accent" style="background:var(--euc)"></div>
+          <div>
+            <div class="panel-title">Observation Map</div>
+            <div class="panel-sub">Survey sites · detections · sensor locations</div>
+          </div>
+          <div class="panel-action" onclick="setPage(null,'sites')">Full GIS View →</div>
+        </div>
+
+        <div class="map-filter-bar">
+          <div class="filter-chip on euc"       onclick="this.classList.toggle('on')"><div class="filter-dot"></div>Detections</div>
+          <div class="filter-chip on banksia"    onclick="this.classList.toggle('on')"><div class="filter-dot"></div>Sensors</div>
+          <div class="filter-chip on grevillea"  onclick="this.classList.toggle('on')"><div class="filter-dot"></div>Threatened spp</div>
+          <div class="filter-chip"               onclick="this.classList.toggle('on')"><div class="filter-dot"></div>Absence records</div>
+          <div class="filter-chip"               onclick="this.classList.toggle('on')"><div class="filter-dot"></div>Habitat zones</div>
+        </div>
+
+        <div id="obs-map"></div>
+      </div>
+
+      <!-- RIGHT COLUMN -->
+      <div class="col">
+
+        <!-- Sensor pipeline -->
+        <div class="panel delay-2">
+          <div class="panel-hd">
+            <div class="panel-hd-accent" style="background:var(--banksia)"></div>
+            <div>
+              <div class="panel-title">Sensor Pipeline</div>
+              <div class="panel-sub">Register → Deploy → Record → Analyse</div>
+            </div>
+          </div>
+          <div class="panel-body" style="padding-top:4px">
+            <div class="pipeline">
+              <div class="pipe-step done">
+                <div class="pipe-circle">✓</div>
+                <div class="pipe-num">142</div>
+                <div class="pipe-lbl">Registered</div>
+              </div>
+              <div class="pipe-step done">
+                <div class="pipe-circle">✓</div>
+                <div class="pipe-num">89</div>
+                <div class="pipe-lbl">Dispatched</div>
+              </div>
+              <div class="pipe-step done">
+                <div class="pipe-circle">✓</div>
+                <div class="pipe-num">81</div>
+                <div class="pipe-lbl">Deployed</div>
+              </div>
+              <div class="pipe-step active">
+                <div class="pipe-circle pulse">↑</div>
+                <div class="pipe-num">8</div>
+                <div class="pipe-lbl">Recording</div>
+              </div>
+              <div class="pipe-step">
+                <div class="pipe-circle" style="color:var(--text-light)">○</div>
+                <div class="pipe-num" style="color:var(--text-muted)">23</div>
+                <div class="pipe-lbl">In Queue</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Recent activity -->
+        <div class="panel delay-2" style="flex:1">
+          <div class="panel-hd">
+            <div class="panel-hd-accent" style="background:var(--wattle)"></div>
+            <div>
+              <div class="panel-title">Recent Activity</div>
+            </div>
+          </div>
+          <div class="panel-body" style="padding-top:4px">
+            <div class="activity-item">
+              <div class="act-icon" style="background:var(--sage-pale)">📍</div>
+              <div class="act-body">
+                <div class="act-title">Detection confirmed — <em>Chalinolobus gouldii</em></div>
+                <div class="act-meta">BS-041 · Mary W. · Postcode 2045</div>
+              </div>
+              <div class="act-time">2m ago</div>
+            </div>
+            <div class="activity-item">
+              <div class="act-icon" style="background:var(--wattle-pale)">✉️</div>
+              <div class="act-body">
+                <div class="act-title">New contributor registered</div>
+                <div class="act-meta">James Okoye · 5001 · Kit dispatched</div>
+              </div>
+              <div class="act-time">18m</div>
+            </div>
+            <div class="activity-item">
+              <div class="act-icon" style="background:rgba(212,114,42,0.1)">📡</div>
+              <div class="act-body">
+                <div class="act-title">Audio uploaded — 4.2h — BS-017</div>
+                <div class="act-meta">Queued for analysis · Anya Patel</div>
+              </div>
+              <div class="act-time">34m</div>
+            </div>
+            <div class="activity-item">
+              <div class="act-icon" style="background:rgba(196,92,46,0.08)">🏡</div>
+              <div class="act-body">
+                <div class="act-title">Landholder consent received</div>
+                <div class="act-meta">R. Nguyen · Tumut property · Signed</div>
+              </div>
+              <div class="act-time">1h</div>
+            </div>
+            <div class="activity-item">
+              <div class="act-icon" style="background:var(--sage-pale)">🔬</div>
+              <div class="act-body">
+                <div class="act-title">Analysis complete — batch #219</div>
+                <div class="act-meta">4 species · 3 new presences · Dr. Torres</div>
+              </div>
+              <div class="act-time">3h</div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div><!-- /main-grid -->
+
+    <!-- Bottom row -->
+    <div class="bottom-grid">
+
+      <!-- Species detections -->
+      <div class="panel delay-3">
+        <div class="panel-hd">
+          <div class="panel-hd-accent" style="background:var(--grevillea)"></div>
+          <div>
+            <div class="panel-title">Species Detections</div>
+            <div class="panel-sub">This survey period</div>
+          </div>
+          <div class="panel-action">Register →</div>
+        </div>
+        <div class="panel-body">
+          <div class="species-list" id="species-list"></div>
+        </div>
+      </div>
+
+      <!-- Recent survey events -->
+      <div class="panel delay-3">
+        <div class="panel-hd">
+          <div class="panel-hd-accent" style="background:var(--wattle)"></div>
+          <div>
+            <div class="panel-title">Survey Events</div>
+            <div class="panel-sub">Effort &amp; event records</div>
+          </div>
+          <div class="panel-action">All events →</div>
+        </div>
+        <div class="table-wrap">
+          <table class="data-table" id="survey-table"></table>
+        </div>
+      </div>
+
+      <!-- Landholders & Habitat -->
+      <div class="col" style="gap:16px">
+
+        <div class="panel delay-4">
+          <div class="panel-hd">
+            <div class="panel-hd-accent" style="background:var(--banksia)"></div>
+            <div>
+              <div class="panel-title">Landholders</div>
+              <div class="panel-sub">CRM — engagement status</div>
+            </div>
+            <div class="panel-action">All →</div>
+          </div>
+          <div class="panel-body" id="lh-list"></div>
+        </div>
+
+        <div class="panel delay-4">
+          <div class="panel-hd">
+            <div class="panel-hd-accent" style="background:var(--euc)"></div>
+            <div>
+              <div class="panel-title">Habitat Types</div>
+              <div class="panel-sub">Survey coverage</div>
+            </div>
+          </div>
+          <div class="panel-body">
+            <div class="habitat-bars" id="habitat-bars"></div>
+          </div>
+        </div>
+
+      </div>
+
+    </div><!-- /bottom-grid -->
+  </div><!-- /page-dashboard -->
+
+  <!-- ─── PLACEHOLDER PAGES ────────────────────── -->
+  <div class="content" id="page-observations" style="display:none">
+    <div class="page-hd"><div><div class="page-title">Observations</div><div class="page-subtitle">1,204 occurrence records · Darwin Core aligned</div></div><div class="page-hd-actions"><div class="btn btn-secondary">⬇ Export DwC-A</div><div class="btn btn-wattle">+ Record Observation</div></div></div>
+    <div class="panel"><div class="panel-hd"><div class="panel-hd-accent" style="background:var(--euc)"></div><div><div class="panel-title">All Observations</div><div class="panel-sub">eventID · occurrenceID · Darwin Core fields</div></div></div><div class="panel-body" style="color:var(--text-muted);font-size:12px;padding:32px;text-align:center">Observation records table with Darwin Core field mapping (occurrenceID, eventID, taxon, decimalLatitude, decimalLongitude, eventDate, recordedBy, identifiedBy, basisOfRecord, occurrenceStatus, Humboldt Extension effort fields).</div></div>
+  </div>
+
+  <div class="content" id="page-surveys" style="display:none">
+    <div class="page-hd"><div><div class="page-title">Survey Events</div><div class="page-subtitle">Event-level effort records · Humboldt Extension</div></div><div class="page-hd-actions"><div class="btn btn-wattle">+ New Event</div></div></div>
+    <div class="panel"><div class="panel-body" style="color:var(--text-muted);font-size:12px;padding:32px;text-align:center">Survey events table with effort metadata, sensor deployment records, site linkage, and Humboldt Extension fields (targetTaxonomicScope, reportedWeather, targetHabitatScope, samplingEffortValue).</div></div>
+  </div>
+
+  <div class="content" id="page-sites" style="display:none">
+    <div class="page-hd"><div><div class="page-title">Sites</div><div class="page-subtitle">Spatially-defined survey sites · PostGIS geometry</div></div><div class="page-hd-actions"><div class="btn btn-secondary">⬇ GeoJSON</div><div class="btn btn-wattle">+ New Site</div></div></div>
+    <div class="panel"><div id="sites-map" style="height:480px;border-radius:var(--radius-lg)"></div></div>
+  </div>
+
+  <div class="content" id="page-species" style="display:none">
+    <div class="page-hd"><div><div class="page-title">Species Register</div><div class="page-subtitle">Microchiroptera · SE Australia</div></div></div>
+    <div class="panel"><div class="panel-body" style="color:var(--text-muted);font-size:12px;padding:32px;text-align:center">Species register with taxonomy, IUCN status, call characteristics, habitat associations, and detection history.</div></div>
+  </div>
+
+  <div class="content" id="page-contributors" style="display:none">
+    <div class="page-hd"><div><div class="page-title">Contributors</div><div class="page-subtitle">142 registered · sensor assignments · postcode coverage</div></div><div class="page-hd-actions"><div class="btn btn-wattle">+ Register</div></div></div>
+    <div class="panel"><div class="panel-body" style="color:var(--text-muted);font-size:12px;padding:32px;text-align:center">Contributor table with postcode, sensor assignment, consent status, recording history, and engagement score.</div></div>
+  </div>
+
+  <div class="content" id="page-sensors" style="display:none">
+    <div class="page-hd"><div><div class="page-title">Sensor Inventory</div><div class="page-subtitle">AudioMoth · BatLogger — full lifecycle tracking</div></div><div class="page-hd-actions"><div class="btn btn-wattle">+ Add Units</div></div></div>
+    <div class="panel"><div class="panel-body" style="color:var(--text-muted);font-size:12px;padding:32px;text-align:center">Sensor inventory with model, serial, current status (warehouse → dispatched → deployed → recording → returning), contributor linkage, hours recorded, and maintenance history.</div></div>
+  </div>
+
+  <div class="content" id="page-dispatch" style="display:none">
+    <div class="page-hd"><div><div class="page-title">Dispatch & Returns</div><div class="page-subtitle">7 pending dispatch · 3 returns due</div></div></div>
+    <div class="panel"><div class="panel-body" style="color:var(--text-muted);font-size:12px;padding:32px;text-align:center">Dispatch queue with contributor, postcode, sensor model, tracking number, dispatch date, and expected return. Overdue returns flagged.</div></div>
+  </div>
+
+  <div class="content" id="page-landholders" style="display:none">
+    <div class="page-hd"><div><div class="page-title">Landholders</div><div class="page-subtitle">CRM — relationships, consent, engagement</div></div><div class="page-hd-actions"><div class="btn btn-wattle">+ Add Landholder</div></div></div>
+    <div class="panel"><div class="panel-body" style="color:var(--text-muted);font-size:12px;padding:32px;text-align:center">Landholder CRM with contact details, property location, consent status, site visits, communications log, habitat restoration actions, and monitoring follow-up schedule.</div></div>
+  </div>
+
+  <div class="content" id="page-habitat" style="display:none">
+    <div class="page-hd"><div><div class="page-title">Habitat Assessments</div><div class="page-subtitle">Site-level ecological condition</div></div><div class="page-hd-actions"><div class="btn btn-wattle">+ New Assessment</div></div></div>
+    <div class="panel"><div class="panel-body" style="color:var(--text-muted);font-size:12px;padding:32px;text-align:center">Habitat assessments with vegetation type, structural complexity, roost features, water proximity, disturbance indicators, and longitudinal condition scores.</div></div>
+  </div>
+
+  <div class="content" id="page-analysis" style="display:none">
+    <div class="page-hd"><div><div class="page-title">Analysis Queue</div><div class="page-subtitle">23 recordings awaiting review</div></div></div>
+    <div class="panel"><div class="panel-body" style="color:var(--text-muted);font-size:12px;padding:32px;text-align:center">Acoustic recording queue with species identification, confidence scoring, call type classification, peak frequency, and presence/absence confirmation. Scientist assignment and progress tracking.</div></div>
+  </div>
+
+  <div class="content" id="page-exports" style="display:none">
+    <div class="page-hd"><div><div class="page-title">Exports</div><div class="page-subtitle">Darwin Core · GBIF · Humboldt Extension</div></div></div>
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px">
+      <div class="panel"><div class="panel-hd"><div class="panel-hd-accent" style="background:var(--euc)"></div><div><div class="panel-title">Darwin Core Archive</div><div class="panel-sub">Occurrences + Events + Multimedia</div></div></div><div class="panel-body"><p style="font-size:12px;color:var(--text-muted);margin-bottom:12px">Standard DwC-A package with occurrence core, event extension, and Humboldt Extension for effort metadata. GBIF-compatible.</p><div class="btn btn-primary" style="font-size:11px">⬇ Export DwC-A</div></div></div>
+      <div class="panel"><div class="panel-hd"><div class="panel-hd-accent" style="background:var(--wattle)"></div><div><div class="panel-title">GeoJSON / Shapefile</div><div class="panel-sub">Spatial occurrence &amp; site data</div></div></div><div class="panel-body"><p style="font-size:12px;color:var(--text-muted);margin-bottom:12px">Survey sites as polygons, sensor locations as points, observation occurrences with coordinates. EPSG:4326 or GDA2020.</p><div class="btn btn-secondary" style="font-size:11px">⬇ Export GeoJSON</div></div></div>
+      <div class="panel"><div class="panel-hd"><div class="panel-hd-accent" style="background:var(--banksia)"></div><div><div class="panel-title">CSV Export</div><div class="panel-sub">Filtered tabular data</div></div></div><div class="panel-body"><p style="font-size:12px;color:var(--text-muted);margin-bottom:12px">Flat CSV exports for observations, survey events, contributors, sensor records, and habitat assessments. Filter by species, date, site, project.</p><div class="btn btn-secondary" style="font-size:11px">⬇ Export CSV</div></div></div>
+    </div>
+  </div>
+
+  <div class="content" id="page-reports" style="display:none">
+    <div class="page-hd"><div><div class="page-title">Reports</div><div class="page-subtitle">Survey summaries · Trend analysis · BioNet submissions</div></div></div>
+    <div class="panel"><div class="panel-body" style="color:var(--text-muted);font-size:12px;padding:32px;text-align:center">Report templates for seasonal summaries, species distribution reports, landholder engagement reports, and BioNet Atlas submission packages.</div></div>
+  </div>
+
+</main>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+// ─────────────────────────────────────────────
+// DATA
+// ─────────────────────────────────────────────
+
+const speciesData = [
+  { sci:'Chalinolobus gouldii',    common:"Gould's wattled bat",      count:412, pct:88, status:'lc',          color:'#5A7A5C' },
+  { sci:'Vespadelus regulus',      common:'Southern forest bat',       count:287, pct:61, status:'lc',          color:'#7A9E7D' },
+  { sci:'Nyctophilus gouldi',      common:"Gould's long-eared bat",   count:194, pct:41, status:'lc',          color:'#8FAF7E' },
+  { sci:'Rhinolophus megaphyllus', common:'Eastern horseshoe bat',     count:103, pct:22, status:'vulnerable',  color:'#C8920A' },
+  { sci:'Miniopterus australis',   common:'Little bent-wing bat',      count:67,  pct:14, status:'threatened',  color:'#C45C2E' },
+  { sci:'Macroderma gigas',        common:'Ghost bat',                 count:22,  pct: 5, status:'threatened',  color:'#D4722A' },
+];
+
+const surveyData = [
+  { id:'SE-2025-089', site:'Tumut Creek R.',  date:'19 Mar',  status:'active',   obs:14 },
+  { id:'SE-2025-088', site:'Kosciuszko NP',   date:'18 Mar',  status:'complete', obs:31 },
+  { id:'SE-2025-087', site:'Yanga NR',        date:'17 Mar',  status:'complete', obs:22 },
+  { id:'SE-2025-086', site:'Warrumbungle NP', date:'15 Mar',  status:'review',   obs:8  },
+  { id:'SE-2025-085', site:'Booroo Wetlands', date:'14 Mar',  status:'complete', obs:19 },
+];
+
+const landholderData = [
+  { init:'RN', name:'R. Nguyen',   location:'Tumut, NSW',       status:'active',   grad:'#5A7A5C,#8FAF7E' },
+  { init:'SK', name:'S. Kaur',     location:'Albury, NSW',      status:'pending',  grad:'#C8920A,#F2C94C' },
+  { init:'TO', name:"T. O'Brien",  location:'Wagga Wagga, NSW', status:'complete', grad:'#B8A882,#9AA89A' },
+  { init:'LM', name:'L. Marchetti',location:'Griffith, NSW',    status:'active',   grad:'#5A7A5C,#7A9E7D' },
+];
+
+const habitatData = [
+  { label:'Dry sclerophyll forest', pct:38, color:'#5A7A5C' },
+  { label:'Riparian woodland',      pct:24, color:'#7A9E7D' },
+  { label:'Wet sclerophyll',        pct:18, color:'#C8920A' },
+  { label:'Grassland / open',       pct:12, color:'#B8A882' },
+  { label:'Urban / suburban',       pct: 8, color:'#9AA89A' },
+];
+
+// ─────────────────────────────────────────────
+// LEAFLET MAP
+// ─────────────────────────────────────────────
+
+// Observation points across SE NSW
+const observations = [
+  // Coastal / Mid-North Coast
+  { lat:-30.296, lng:153.113, species:'Chalinolobus gouldii',    common:"Gould's wattled bat",    det:22, sensor:'BS-041', color:'#5A7A5C' }, // Coffs Harbour
+  { lat:-30.341, lng:152.712, species:'Vespadelus regulus',      common:'Southern forest bat',     det:18, sensor:'BS-058', color:'#7A9E7D' }, // Dorrigo
+  { lat:-30.452, lng:152.893, species:'Nyctophilus gouldi',      common:"Gould's long-eared bat", det:14, sensor:'BS-033', color:'#8FAF7E' }, // Bellingen
+  { lat:-31.083, lng:152.833, species:'Miniopterus australis',   common:'Little bent-wing bat',    det:11, sensor:'BS-072', color:'#C45C2E' }, // Kempsey
+  { lat:-31.430, lng:152.908, species:'Rhinolophus megaphyllus', common:'Eastern horseshoe bat',   det:9,  sensor:'BS-017', color:'#C8920A' }, // Port Macquarie
+
+  // Escarpment transition zone
+  { lat:-31.150, lng:152.200, species:'Chalinolobus gouldii',    common:"Gould's wattled bat",    det:28, sensor:'BS-019', color:'#5A7A5C' }, // Wauchope hinterland
+  { lat:-30.950, lng:151.950, species:'Vespadelus regulus',      common:'Southern forest bat',     det:16, sensor:'BS-011', color:'#7A9E7D' }, // Walcha
+
+  // New England Tablelands
+  { lat:-30.514, lng:151.665, species:'Nyctophilus gouldi',      common:"Gould's long-eared bat", det:19, sensor:'BS-088', color:'#8FAF7E' }, // Armidale
+  { lat:-30.216, lng:151.667, species:'Miniopterus australis',   common:'Little bent-wing bat',    det:8,  sensor:'BS-044', color:'#C45C2E' }, // Guyra
+  { lat:-31.090, lng:150.929, species:'Chalinolobus gouldii',    common:"Gould's wattled bat",    det:24, sensor:'BS-091', color:'#5A7A5C' }, // Tamworth
+  { lat:-30.995, lng:151.600, species:'Rhinolophus megaphyllus', common:'Eastern horseshoe bat',   det:6,  sensor:'BS-067', color:'#C8920A' }, // Armidale south
+  { lat:-31.550, lng:151.350, species:'Macroderma gigas',        common:'Ghost bat',               det:3,  sensor:'BS-023', color:'#D4722A' }, // Walcha south
+];
+
+// Sensor locations (slightly offset from obs)
+const sensorLocations = [
+  { lat:-30.300, lng:153.118, id:'BS-041', status:'recording' }, // Coffs
+  { lat:-30.345, lng:152.717, id:'BS-058', status:'deployed'  }, // Dorrigo
+  { lat:-30.456, lng:152.898, id:'BS-033', status:'recording' }, // Bellingen
+  { lat:-31.088, lng:152.838, id:'BS-072', status:'recording' }, // Kempsey
+  { lat:-31.435, lng:152.913, id:'BS-017', status:'deployed'  }, // Port Macquarie
+  { lat:-31.155, lng:152.205, id:'BS-019', status:'recording' }, // Escarpment
+  { lat:-30.955, lng:151.955, id:'BS-011', status:'deployed'  }, // Walcha
+  { lat:-30.519, lng:151.670, id:'BS-088', status:'recording' }, // Armidale
+  { lat:-30.221, lng:151.672, id:'BS-044', status:'deployed'  }, // Guyra
+  { lat:-31.095, lng:150.934, id:'BS-091', status:'recording' }, // Tamworth
+];
+
+function initMap(containerId) {
+  const map = L.map(containerId, {
+    center: [-30.75, 151.75],
+    zoom: 7,
+    zoomControl: true,
+    attributionControl: true,
+  });
+
+  // Muted tile layer — CartoDB Voyager (warm, uncluttered)
+  L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
+    attribution: '© OpenStreetMap © CARTO',
+    subdomains: 'abcd',
+    maxZoom: 19,
+  }).addTo(map);
+
+  // ---- LGA Overlay (Mid-North Coast + New England simplified bounds) ----
+  /* const lgaGeo = {
+    type: "FeatureCollection",
+    features: [
+      {
+        type: "Feature",
+        properties: { name: "Mid-North Coast Region" },
+        geometry: {
+          type: "Polygon",
+          coordinates: [[
+            [150.8,-31.7],
+            [153.6,-31.7],
+            [153.6,-29.9],
+            [150.8,-29.9],
+            [150.8,-31.7]
+          ]]
+        }
+      }
+    ]
+  };
+
+  L.geoJSON(lgaGeo, {
+    style: {
+      color: '#5A7A5C',
+      weight: 1.5,
+      fillColor: '#8FAF7E',
+      fillOpacity: 0.06,
+    }
+  }).addTo(map);
+  */
+  // Observation markers
+  observations.forEach(obs => {
+    const marker = L.circleMarker([obs.lat, obs.lng], {
+      radius: Math.max(6, Math.min(16, obs.det * 0.6)),
+      fillColor: obs.color,
+      color: 'white',
+      weight: 1.5,
+      opacity: 1,
+      fillOpacity: 0.85,
+    }).addTo(map);
+
+    marker.bindPopup(`
+      <div class="popup-species">${obs.species}</div>
+      <div class="popup-meta">${obs.common}</div>
+      <div class="popup-meta" style="margin-top:6px">
+        <span>${obs.det} detections</span> · ${obs.sensor}
+      </div>
+    `);
+  });
+
+  // Sensor markers (diamond-ish squares)
+  sensorLocations.forEach(s => {
+    const isRecording = s.status === 'recording';
+    const sIcon = L.divIcon({
+      className: '',
+      html: `<div style="
+        width:10px;height:10px;
+        background:${isRecording ? '#C8920A' : '#B8A882'};
+        border:2px solid white;
+        transform:rotate(45deg);
+        box-shadow:0 1px 4px rgba(0,0,0,0.3)${isRecording ? ',0 0 8px rgba(200,146,10,0.5)' : ''};
+      "></div>`,
+      iconSize: [14, 14],
+      iconAnchor: [7, 7],
+    });
+    L.marker([s.lat, s.lng], { icon: sIcon })
+      .addTo(map)
+      .bindPopup(`<div class="popup-meta"><strong style="color:#C8920A">${s.id}</strong><br>${s.status}</div>`);
+  });
+
+  const allPoints = [
+    ...observations.map(o => [o.lat, o.lng]),
+    ...sensorLocations.map(s => [s.lat, s.lng]),
+  ];
+
+  map.fitBounds(allPoints, { padding: [40, 40] });
+
+  return map;
+}
+
+let dashMap = null;
+
+function ensureDashMap() {
+  if (!dashMap && typeof L !== 'undefined') {
+    dashMap = initMap('obs-map');
+  }
+}
+
+// ─────────────────────────────────────────────
+// RENDER SPECIES LIST
+// ─────────────────────────────────────────────
+(function(){
+  const container = document.getElementById('species-list');
+  if(!container) return;
+
+  const badgeClass = { lc:'badge-lc', vulnerable:'badge-vulnerable', threatened:'badge-threatened' };
+  const badgeLabel = { lc:'LC', vulnerable:'Vulnerable', threatened:'Threatened' };
+
+  speciesData.forEach(s => {
+    const row = document.createElement('div');
+    row.className = 'species-row';
+    row.innerHTML = `
+      <div class="species-name-col">
+        <div class="species-sci">${s.sci}</div>
+        <div class="species-common">${s.common}</div>
+      </div>
+      <div class="species-bar-wrap">
+        <div class="species-bar" style="width:0%;background:${s.color}" data-pct="${s.pct}"></div>
+      </div>
+      <div class="species-count">${s.count}</div>
+      <div class="species-badge ${badgeClass[s.status]}">${badgeLabel[s.status]}</div>
+    `;
+    container.appendChild(row);
+  });
+
+  // Animate bars
+  setTimeout(() => {
+    document.querySelectorAll('.species-bar').forEach(b => {
+      b.style.width = b.dataset.pct + '%';
+    });
+  }, 300);
+})();
+
+// ─────────────────────────────────────────────
+// RENDER SURVEY TABLE
+// ─────────────────────────────────────────────
+(function(){
+  const table = document.getElementById('survey-table');
+  if(!table) return;
+
+  const thead = table.createTHead();
+  const hr = thead.insertRow();
+  ['Event ID','Site','Date','Status','Obs'].forEach(h => {
+    const th = document.createElement('th');
+    th.textContent = h;
+    hr.appendChild(th);
+  });
+
+  const tbody = table.createTBody();
+
+  const statusMap = {
+    active:   '<div class="status-pill status-active"><div class="pill-dot"></div>Active</div>',
+    complete: '<div class="status-pill status-complete"><div class="pill-dot"></div>Complete</div>',
+    review:   '<div class="status-pill status-review"><div class="pill-dot"></div>Review</div>',
+    pending:  '<div class="status-pill status-pending"><div class="pill-dot"></div>Pending</div>',
+  };
+
+  surveyData.forEach(s => {
+    const tr = tbody.insertRow();
+    tr.innerHTML = `
+      <td class="td-mono">${s.id}</td>
+      <td>${s.site}</td>
+      <td class="td-mono">${s.date}</td>
+      <td>${statusMap[s.status]}</td>
+      <td class="td-mono" style="color:var(--euc);font-weight:600">${s.obs}</td>
+    `;
+  });
+})();
+
+// ─────────────────────────────────────────────
+// RENDER LANDHOLDERS
+// ─────────────────────────────────────────────
+(function(){
+  const container = document.getElementById('lh-list');
+  if(!container) return;
+
+  const statusCls = { active:'status-active', pending:'status-pending', complete:'status-complete' };
+  const statusLbl = { active:'Active', pending:'Pending', complete:'Consented' };
+
+  landholderData.forEach(lh => {
+    const row = document.createElement('div');
+    row.className = 'lh-row';
+    row.innerHTML = `
+      <div class="lh-avatar" style="background:linear-gradient(135deg,${lh.grad});color:white">${lh.init}</div>
+      <div style="flex:1;min-width:0">
+        <div class="lh-name">${lh.name}</div>
+        <div class="lh-meta">${lh.location}</div>
+      </div>
+      <div class="lh-status">
+        <div class="status-pill ${statusCls[lh.status]}"><div class="pill-dot"></div>${statusLbl[lh.status]}</div>
+      </div>
+    `;
+    container.appendChild(row);
+  });
+})();
+
+// ─────────────────────────────────────────────
+// RENDER HABITAT BARS
+// ─────────────────────────────────────────────
+(function(){
+  const container = document.getElementById('habitat-bars');
+  if(!container) return;
+
+  habitatData.forEach(h => {
+    const row = document.createElement('div');
+    row.className = 'hab-row';
+    row.innerHTML = `
+      <div class="hab-label">${h.label}</div>
+      <div class="hab-track">
+        <div class="hab-fill" style="width:0%;background:${h.color}" data-pct="${h.pct}"></div>
+      </div>
+      <div class="hab-pct">${h.pct}%</div>
+    `;
+    container.appendChild(row);
+  });
+
+  setTimeout(() => {
+    document.querySelectorAll('.hab-fill').forEach(f => {
+      f.style.width = f.dataset.pct + '%';
+    });
+  }, 400);
+})();
+
+// ─────────────────────────────────────────────
+// NAVIGATION
+// ─────────────────────────────────────────────
+const pageIds = ['dashboard','observations','surveys','sites','species','contributors',
+                 'sensors','dispatch','landholders','habitat','analysis','exports','reports'];
+
+function setPage(navEl, pageId) {
+  // Hide all pages
+  pageIds.forEach(id => {
+    const el = document.getElementById('page-' + id);
+    if(el) el.style.display = 'none';
+  });
+
+  // Show target
+  const target = document.getElementById('page-' + pageId);
+  if(target) target.style.display = '';
+
+  // Update breadcrumb
+  const labels = {
+    dashboard:'Dashboard', observations:'Observations', surveys:'Survey Events',
+    sites:'Sites', species:'Species Register', contributors:'Contributors',
+    sensors:'Sensor Inventory', dispatch:'Dispatch & Returns', landholders:'Landholders',
+    habitat:'Habitat Assessments', analysis:'Analysis Queue', exports:'Exports',
+    reports:'Reports'
+  };
+  document.getElementById('breadcrumb').textContent = labels[pageId] || pageId;
+
+  // Update nav
+  if(navEl) {
+    document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+    navEl.classList.add('active');
+  }
+
+  // Init map on dashboard
+  if(pageId === 'dashboard') {
+    setTimeout(ensureDashMap, 100);
+  }
+
+  // Sites page map
+  if(pageId === 'sites') {
+    setTimeout(() => {
+      const sitesEl = document.getElementById('sites-map');
+      if(sitesEl && !sitesEl.dataset.mapInit) {
+        sitesEl.dataset.mapInit = '1';
+        const m = (typeof L !== 'undefined') ? initMap('sites-map') : null;
+        if(!m) return;
+        // Draw a sample survey polygon
+        L.polygon([
+          [-35.2, 148.0], [-35.2, 148.5], [-35.6, 148.5], [-35.6, 148.0]
+        ], {
+          color: '#5A7A5C', weight: 2, fillColor: '#5A7A5C', fillOpacity: 0.08,
+          dashArray: '6,4'
+        }).addTo(m).bindPopup('<div class="popup-species">Tumut Survey Zone</div><div class="popup-meta">Area: 2,840 km²</div>');
+      }
+    }, 150);
+  }
+}
+
+// Period selector
+function setPeriod(el, val) {
+  document.querySelectorAll('.period-opt').forEach(o => o.classList.remove('active'));
+  el.classList.add('active');
+}
+
+// Layer chip toggles
+document.querySelectorAll('.filter-chip').forEach(chip => {
+  chip.addEventListener('click', () => {
+    chip.classList.toggle('on');
+  });
+});
+
+// Tab interaction for tables
+document.querySelectorAll('.tab-bar').forEach(bar => {
+  bar.querySelectorAll('.tab').forEach(tab => {
+    tab.addEventListener('click', () => {
+      bar.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+      tab.classList.add('active');
+    });
+  });
+});
+
+// ─────────────────────────────────────────────
+// INIT — safe: called only after Leaflet confirms loaded
+// ─────────────────────────────────────────────
+function onLeafletReady() {
+  ensureDashMap();
+}
+const roleSwitch = document.getElementById("roleSwitch");
+const roleLabel = document.querySelector(".topbar h1");
+
+roleSwitch.addEventListener("change", function () {
+  const role = this.value;
+  roleLabel.textContent =
+    "Microbat Diversity Survey — Mid-North Coast (" +
+    role.charAt(0).toUpperCase() + role.slice(1) +
+    " View)";
+});
+
+</script>
+
+<!-- Leaflet loaded last: guarantees L is defined before any map call -->
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" onload="onLeafletReady()"></script>
+</body>
+</html>
