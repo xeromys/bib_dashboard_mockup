@@ -5,7 +5,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Bats in Backyards — Dashboard</title>
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,400;0,9..144,500;1,9..144,300;1,9..144,400&family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@300;400;500&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+      onerror="this.onerror=null;this.href='https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.min.css'"/>
 <style>
 
 /*
@@ -642,8 +643,12 @@ body {
 #obs-map {
   width: 100%;
   height: 360px;
+  min-height: 200px;   /* belt-and-braces for iOS Safari flex container */
   background: #EFF5EB;
   border-radius: 0 0 var(--radius-lg) var(--radius-lg);
+  /* Force a stacking context so Leaflet tiles render above panel bg */
+  position: relative;
+  z-index: 0;
 }
 
 .map-filter-bar {
@@ -1792,7 +1797,6 @@ body {
   </div>
 
 </main>
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
 // ─────────────────────────────────────────────
 // DATA
@@ -2030,6 +2034,9 @@ let dashMap = null;
 function ensureDashMap() {
   if (!dashMap && typeof L !== 'undefined') {
     dashMap = initMap('obs-map');
+    // Mobile browsers finish layout after JS runs — invalidate twice for safety
+    setTimeout(() => { if (dashMap) dashMap.invalidateSize(); }, 150);
+    setTimeout(() => { if (dashMap) dashMap.invalidateSize(); }, 500);
   } else if (dashMap) {
     // Re-check size in case container was hidden/shown
     setTimeout(() => dashMap.invalidateSize(), 50);
@@ -2314,7 +2321,54 @@ if (roleSwitch) {
 
 </script>
 
-<!-- Leaflet loaded last: guarantees L is defined before any map call -->
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" onload="onLeafletReady()"></script>
+<!-- Leaflet — loaded once, with CDN fallback for mobile reliability -->
+<script>
+(function() {
+  // Robust loader: primary CDN with automatic fallback + retry on failure
+  // Uses DOMContentLoaded so the map container is guaranteed to exist
+  var PRIMARY = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js';
+  var FALLBACK = 'https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.min.js';
+
+  function loadScript(src, onSuccess, onFail) {
+    var s = document.createElement('script');
+    s.src = src;
+    s.onload = onSuccess;
+    s.onerror = onFail;
+    document.head.appendChild(s);
+  }
+
+  function initWhenReady() {
+    // Ensure DOM + map container are ready before initialising
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', function() {
+        setTimeout(ensureDashMap, 0);
+      });
+    } else {
+      setTimeout(ensureDashMap, 0);
+    }
+  }
+
+  loadScript(
+    PRIMARY,
+    function() { initWhenReady(); },                           // primary succeeded
+    function() {
+      // Primary failed — try fallback (common on mobile with strict CSP or slow CDN)
+      loadScript(
+        FALLBACK,
+        function() { initWhenReady(); },                       // fallback succeeded
+        function() {
+          // Both failed — show a friendly message in the map container
+          var el = document.getElementById('obs-map');
+          if (el) {
+            el.style.cssText = 'display:flex;align-items:center;justify-content:center;' +
+              'height:260px;background:#EFF5EB;color:#7A9080;font-size:12px;text-align:center;padding:20px;';
+            el.innerHTML = '<div>🗺 Map unavailable — check your internet connection and reload.</div>';
+          }
+        }
+      );
+    }
+  );
+})();
+</script>
 </body>
 </html>
