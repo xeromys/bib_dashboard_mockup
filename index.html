@@ -80,7 +80,7 @@ body {
 
 /* ─── LAYOUT ────────────────────────────────── */
 .concept-banner {
-  position: top;
+  position: fixed;
   top: 0;
   left: 0;
   right: 0;
@@ -91,7 +91,6 @@ body {
   color: #F2C94C;
   font-size: 11px;
   letter-spacing: 0.5px;
-  text-align: center;
   z-index: 9999;
 }
 
@@ -99,15 +98,11 @@ body {
   margin: 0;
   padding-top: 28px;
 }
-.app-shell {
-  margin-top: 29px;
-}
 
 /* ─── LAYOUT ────────────────────────────────── */
 .layout {
   display: flex;
   min-height: 100vh;
-  margin-top: 28px;
 }
 
 /* ─── SIDEBAR ───────────────────────────────── */
@@ -115,7 +110,7 @@ body {
   width: var(--sidebar-w);
   background: var(--ironbark);
   position: fixed;
-  top: 29px; left: 0; bottom: 0;
+  top: 28px; left: 0; bottom: 0;
   display: flex;
   flex-direction: column;
   z-index: 200;
@@ -1105,9 +1100,240 @@ body {
   background: rgba(247,243,235,0.85) !important;
 }
 
+
+/* ════════════════════════════════════════════
+   RESPONSIVE — MOBILE / TABLET / DESKTOP
+   Breakpoints:
+     Mobile  : < 640px   (phone portrait)
+     Tablet  : 640–1023px
+     Desktop : ≥ 1024px
+════════════════════════════════════════════ */
+
+/* Hamburger toggle button — hidden on desktop */
+.sidebar-toggle {
+  display: none;
+  width: 36px; height: 36px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--white);
+  align-items: center; justify-content: center;
+  cursor: pointer;
+  font-size: 18px;
+  color: var(--text-secondary);
+  flex-shrink: 0;
+}
+
+/* Sidebar overlay (mobile) */
+.sidebar-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.4);
+  z-index: 199;
+  backdrop-filter: blur(2px);
+}
+
+.sidebar-overlay.show { display: block; }
+
+/* ── TABLET: 640px – 1023px ────────────────── */
+@media (max-width: 1023px) {
+
+  :root {
+    --sidebar-w: 224px;
+  }
+
+  /* Sidebar slides in over content */
+  .sidebar {
+    transform: translateX(-100%);
+    transition: transform 0.25s ease;
+    z-index: 200;
+    top: 28px;
+  }
+
+  .sidebar.open {
+    transform: translateX(0);
+    box-shadow: 4px 0 24px rgba(0,0,0,0.2);
+  }
+
+  /* Main takes full width */
+  .main {
+    margin-left: 0 !important;
+  }
+
+  /* Show hamburger */
+  .sidebar-toggle {
+    display: flex;
+  }
+
+  /* Topbar: stack controls on smaller tablets */
+  .topbar {
+    flex-wrap: wrap;
+    height: auto;
+    padding: 10px 14px;
+    gap: 8px;
+  }
+
+  .topbar-right {
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-left: 0;
+    width: 100%;
+  }
+
+  .topbar-period { flex-wrap: nowrap; }
+
+  /* Hide BiB website link to save space */
+  .topbar-right a { display: none; }
+
+  /* 2-column stat grid on tablet */
+  .stat-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  /* Map + sidebar stacks vertically */
+  .main-grid {
+    grid-template-columns: 1fr;
+  }
+
+  /* Bottom grid: 2 columns */
+  .bottom-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  /* Exports page grid */
+  #page-exports > div[style*="grid-template-columns"] {
+    grid-template-columns: 1fr 1fr !important;
+  }
+
+  /* Map height a little shorter */
+  #obs-map { height: 300px; }
+}
+
+/* ── MOBILE: < 640px ───────────────────────── */
+@media (max-width: 639px) {
+
+  html { font-size: 13px; }
+
+  .concept-banner { font-size: 10px; letter-spacing: 0; }
+
+  /* Content padding tighter */
+  .content { padding: 14px 12px; }
+
+  /* Topbar */
+  .topbar { padding: 8px 12px; }
+  .topbar-breadcrumb { font-size: 11px; }
+
+  /* Hide period selector on small phones */
+  .topbar-period { display: none; }
+
+  /* Hide topbar controls selects on mobile (too cramped) */
+  .topbar-controls { display: none; }
+
+  /* Single column stats */
+  .stat-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
+  }
+
+  .stat-value { font-size: 24px; }
+
+  /* Darwin Core banner: stack vertically */
+  .dwc-banner {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+  }
+
+  .dwc-actions { width: 100%; justify-content: flex-end; }
+
+  /* Page header: stack title and buttons */
+  .page-hd {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+  }
+
+  .page-hd-actions { width: 100%; }
+
+  .page-title { font-size: 20px; }
+
+  /* Map */
+  .main-grid { grid-template-columns: 1fr; }
+  #obs-map   { height: 260px; }
+
+  /* Bottom: single column */
+  .bottom-grid { grid-template-columns: 1fr; }
+
+  /* Species row: hide bar on very small, just show name + count */
+  .species-name-col { width: auto; flex: 1; }
+  .species-bar-wrap { min-width: 60px; }
+  .species-badge    { display: none; }
+
+  /* Habitat label truncation */
+  .hab-label { width: 100px; font-size: 10px; }
+
+  /* Pipeline: smaller text */
+  .pipe-num  { font-size: 14px; }
+  .pipe-lbl  { font-size: 8px; }
+  .pipe-circle { width: 24px; height: 24px; font-size: 9px; }
+
+  /* Table: horizontal scroll */
+  .table-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  .data-table { min-width: 400px; }
+
+  /* Survey event ID: truncate */
+  .td-mono { font-size: 10px; }
+
+  /* Map filter chips: smaller */
+  .filter-chip { font-size: 10px; padding: 3px 8px; }
+  .map-filter-bar { gap: 4px; padding: 8px 10px; }
+
+  /* Exports grid */
+  #page-exports > div[style*="grid-template-columns"] {
+    grid-template-columns: 1fr !important;
+  }
+
+  /* Panel padding */
+  .panel-body { padding: 12px 14px; }
+  .panel-hd   { padding: 11px 14px 10px; }
+
+  /* Buttons smaller */
+  .btn { padding: 6px 11px; font-size: 11px; }
+}
+
+/* ── LARGE DESKTOP: ≥ 1400px ───────────────── */
+@media (min-width: 1400px) {
+  .main-grid { grid-template-columns: 1fr 380px; }
+  .bottom-grid { grid-template-columns: 1fr 1fr 1fr; }
+  .content { padding: 24px 28px; }
+}
+
+/* Safe area for notched phones */
+@supports (padding-bottom: env(safe-area-inset-bottom)) {
+  .sidebar-foot {
+    padding-bottom: calc(12px + env(safe-area-inset-bottom));
+  }
+}
+
+
+/* ── LGA Layer styles ─────────────────── */
+.lga-tooltip {
+  background: var(--ironbark);
+  color: var(--wattle-lt);
+  border: 1px solid rgba(242,201,76,0.3);
+  border-radius: 4px;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 11px;
+  font-weight: 500;
+  padding: 3px 8px;
+  box-shadow: var(--shadow-sm);
+  white-space: nowrap;
+}
+.lga-tooltip::before { display: none; }
 </style>
 </head>
 <body>
+<div class="sidebar-overlay" id="sidebar-overlay" onclick="closeSidebar()"></div>
 <div class="concept-banner">
   Conceptual Interface Mockup — For discussion only. Data and functionality are illustrative.
 </div>
@@ -1214,6 +1440,7 @@ body {
 
   <!-- TOPBAR -->
   <header class="topbar">
+    <button class="sidebar-toggle" id="sidebar-toggle" onclick="toggleSidebar()" aria-label="Menu">☰</button>
     <div class="topbar-breadcrumb">
       <span>BiB CRM</span>
       <span class="topbar-sep">›</span>
@@ -1329,6 +1556,7 @@ body {
           <div class="filter-chip on grevillea"  onclick="this.classList.toggle('on')"><div class="filter-dot"></div>Threatened spp</div>
           <div class="filter-chip"               onclick="this.classList.toggle('on')"><div class="filter-dot"></div>Absence records</div>
           <div class="filter-chip"               onclick="this.classList.toggle('on')"><div class="filter-dot"></div>Habitat zones</div>
+          <div class="filter-chip on" id="lga-chip" onclick="toggleLGALayer(this)"><div class="filter-dot" style="background:#5A7A5C"></div>LGA boundaries</div>
         </div>
 
         <div id="obs-map"></div>
@@ -1656,36 +1884,97 @@ function initMap(containerId) {
     maxZoom: 19,
   }).addTo(map);
 
-  // ---- LGA Overlay (Mid-North Coast + New England simplified bounds) ----
-  /* const lgaGeo = {
-    type: "FeatureCollection",
+  // ── LGA Layer — NSW Mid-North Coast & New England ──────────────────────
+  // Simplified boundaries derived from ABS ASGS LGA 2021
+  // Covers the survey project area: Coffs Harbour, Bellingen, Kempsey,
+  // Port Macquarie-Hastings, Armidale, Uralla, Walcha, Tamworth
+  const lgaData = {
+    type: 'FeatureCollection',
     features: [
-      {
-        type: "Feature",
-        properties: { name: "Mid-North Coast Region" },
-        geometry: {
-          type: "Polygon",
-          coordinates: [[
-            [150.8,-31.7],
-            [153.6,-31.7],
-            [153.6,-29.9],
-            [150.8,-29.9],
-            [150.8,-31.7]
-          ]]
-        }
-      }
+      { type:'Feature', properties:{ lga:'Coffs Harbour' }, geometry:{ type:'Polygon', coordinates:[[
+        [152.80,-29.95],[153.45,-29.95],[153.55,-30.10],[153.40,-30.35],
+        [153.25,-30.55],[153.00,-30.60],[152.85,-30.45],[152.75,-30.25],
+        [152.70,-30.05],[152.80,-29.95]
+      ]]}},
+      { type:'Feature', properties:{ lga:'Bellingen' }, geometry:{ type:'Polygon', coordinates:[[
+        [152.20,-30.20],[152.90,-30.20],[152.95,-30.35],[152.90,-30.60],
+        [152.75,-30.65],[152.40,-30.60],[152.15,-30.50],[152.10,-30.35],
+        [152.20,-30.20]
+      ]]}},
+      { type:'Feature', properties:{ lga:'Kempsey' }, geometry:{ type:'Polygon', coordinates:[[
+        [152.55,-30.85],[153.20,-30.85],[153.25,-30.95],[153.10,-31.30],
+        [152.95,-31.40],[152.65,-31.35],[152.45,-31.15],[152.40,-30.95],
+        [152.55,-30.85]
+      ]]}},
+      { type:'Feature', properties:{ lga:'Port Macquarie-Hastings' }, geometry:{ type:'Polygon', coordinates:[[
+        [152.35,-31.25],[153.10,-31.25],[153.30,-31.40],[153.25,-31.75],
+        [152.85,-31.85],[152.45,-31.70],[152.20,-31.50],[152.20,-31.35],
+        [152.35,-31.25]
+      ]]}},
+      { type:'Feature', properties:{ lga:'Armidale Regional' }, geometry:{ type:'Polygon', coordinates:[[
+        [151.35,-29.90],[152.20,-29.90],[152.30,-30.05],[152.25,-30.55],
+        [152.10,-30.75],[151.75,-30.80],[151.40,-30.70],[151.20,-30.45],
+        [151.20,-30.15],[151.35,-29.90]
+      ]]}},
+      { type:'Feature', properties:{ lga:'Uralla' }, geometry:{ type:'Polygon', coordinates:[[
+        [151.25,-30.60],[151.80,-30.60],[151.90,-30.75],[151.85,-31.10],
+        [151.55,-31.20],[151.20,-31.05],[151.05,-30.85],[151.10,-30.70],
+        [151.25,-30.60]
+      ]]}},
+      { type:'Feature', properties:{ lga:'Walcha' }, geometry:{ type:'Polygon', coordinates:[[
+        [151.50,-30.90],[152.05,-30.90],[152.20,-31.05],[152.10,-31.45],
+        [151.80,-31.60],[151.45,-31.55],[151.25,-31.30],[151.30,-31.05],
+        [151.50,-30.90]
+      ]]}},
+      { type:'Feature', properties:{ lga:'Tamworth Regional' }, geometry:{ type:'Polygon', coordinates:[[
+        [150.50,-30.70],[151.35,-30.70],[151.45,-30.85],[151.35,-31.40],
+        [151.00,-31.55],[150.60,-31.45],[150.30,-31.15],[150.35,-30.85],
+        [150.50,-30.70]
+      ]]}},
     ]
   };
 
-  L.geoJSON(lgaGeo, {
-    style: {
-      color: '#5A7A5C',
-      weight: 1.5,
-      fillColor: '#8FAF7E',
-      fillOpacity: 0.06,
+  let lgaLayer = null;
+  let lgaVisible = true;
+
+  function styleDefault(f) {
+    return {
+      color: '#5A7A5C', weight: 1.5, dashArray: '4,3',
+      fillColor: '#8FAF7E', fillOpacity: 0.07
+    };
+  }
+  function styleHighlight(f) {
+    return {
+      color: '#C8920A', weight: 2, dashArray: '',
+      fillColor: '#F2C94C', fillOpacity: 0.12
+    };
+  }
+
+  lgaLayer = L.geoJSON(lgaData, {
+    style: styleDefault,
+    onEachFeature: function(feature, layer) {
+      const name = feature.properties.lga;
+      layer.bindTooltip(name, {
+        permanent: false, direction: 'center',
+        className: 'lga-tooltip'
+      });
+      layer.on({
+        mouseover: function(e) {
+          e.target.setStyle(styleHighlight(feature));
+          e.target.openTooltip();
+        },
+        mouseout: function(e) {
+          lgaLayer.resetStyle(e.target);
+        },
+        click: function(e) {
+          map.fitBounds(e.target.getBounds(), { padding: [40,40] });
+        }
+      });
     }
   }).addTo(map);
-  */
+
+  // Expose toggle function on the map object for the filter chip
+  map._lgaLayer = lgaLayer;
   // Observation markers
   observations.forEach(obs => {
     const marker = L.circleMarker([obs.lat, obs.lng], {
@@ -1741,8 +2030,16 @@ let dashMap = null;
 function ensureDashMap() {
   if (!dashMap && typeof L !== 'undefined') {
     dashMap = initMap('obs-map');
+  } else if (dashMap) {
+    // Re-check size in case container was hidden/shown
+    setTimeout(() => dashMap.invalidateSize(), 50);
   }
 }
+
+// Invalidate map size on window resize
+window.addEventListener('resize', () => {
+  if (dashMap) dashMap.invalidateSize();
+});
 
 // ─────────────────────────────────────────────
 // RENDER SPECIES LIST
@@ -1902,6 +2199,9 @@ function setPage(navEl, pageId) {
     navEl.classList.add('active');
   }
 
+  // Close sidebar on mobile after navigation
+  if (window.innerWidth < 1024) closeSidebar();
+
   // Init map on dashboard
   if(pageId === 'dashboard') {
     setTimeout(ensureDashMap, 100);
@@ -1951,21 +2251,66 @@ document.querySelectorAll('.tab-bar').forEach(bar => {
 });
 
 // ─────────────────────────────────────────────
+// SIDEBAR TOGGLE (mobile/tablet)
+// ─────────────────────────────────────────────
+function toggleSidebar() {
+  const sidebar  = document.querySelector('.sidebar');
+  const overlay  = document.getElementById('sidebar-overlay');
+  const isOpen   = sidebar.classList.contains('open');
+  if (isOpen) {
+    sidebar.classList.remove('open');
+    overlay.classList.remove('show');
+  } else {
+    sidebar.classList.add('open');
+    overlay.classList.add('show');
+  }
+}
+
+function closeSidebar() {
+  document.querySelector('.sidebar').classList.remove('open');
+  document.getElementById('sidebar-overlay').classList.remove('show');
+}
+
+// Close sidebar when a nav item is tapped on mobile
+document.querySelectorAll('.nav-item').forEach(item => {
+  item.addEventListener('click', () => {
+    if (window.innerWidth < 1024) closeSidebar();
+  });
+});
+
+// ─────────────────────────────────────────────
+// LGA LAYER TOGGLE
+// ─────────────────────────────────────────────
+function toggleLGALayer(chip) {
+  chip.classList.toggle('on');
+  if (!dashMap || !dashMap._lgaLayer) return;
+  if (chip.classList.contains('on')) {
+    dashMap._lgaLayer.addTo(dashMap);
+  } else {
+    dashMap._lgaLayer.remove();
+  }
+}
+
+// ─────────────────────────────────────────────
 // INIT — safe: called only after Leaflet confirms loaded
 // ─────────────────────────────────────────────
 function onLeafletReady() {
   ensureDashMap();
 }
+// Role switch — updates project label in sidebar
 const roleSwitch = document.getElementById("roleSwitch");
-const roleLabel = document.querySelector(".topbar h1");
-
-roleSwitch.addEventListener("change", function () {
-  const role = this.value;
-  roleLabel.textContent =
-    "Microbat Diversity Survey — Mid-North Coast (" +
-    role.charAt(0).toUpperCase() + role.slice(1) +
-    " View)";
-});
+if (roleSwitch) {
+  roleSwitch.addEventListener("change", function () {
+    const role = this.value;
+    const projectName = document.querySelector(".brand-project-name");
+    if (projectName) {
+      const base = "Microbat Diversity Survey — Mid-North Coast & New England";
+      projectName.textContent = role === "admin"
+        ? base
+        : base + " (" + role.charAt(0).toUpperCase() + role.slice(1) + ")";
+    }
+  });
+}
 
 </script>
 
